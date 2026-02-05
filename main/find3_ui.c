@@ -34,7 +34,7 @@ static void update_status(void) {
 
 esp_err_t find3_ui_init(void) {
     find3_config_t config = {
-        .server_url = "http://192.168.1.100:8003",
+        .server_url = "http://192.168.1.50:8003",
         .device_name = "NetRaze32",
         .family_name = "home",
         .location = "unknown",

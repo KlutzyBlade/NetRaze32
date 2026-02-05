@@ -2,7 +2,7 @@
 #define FIND3_CONFIG_H
 
 // FIND3 Server Configuration
-#define FIND3_SERVER_URL        "http://192.168.1.100:8003"
+#define FIND3_SERVER_URL        "http://192.168.1.50:8003"
 #define FIND3_DEVICE_NAME       "NetRaze32"
 #define FIND3_FAMILY_NAME       "home"
 #define FIND3_SCAN_INTERVAL_MS  5000
