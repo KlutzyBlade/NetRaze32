@@ -13,8 +13,8 @@ Your CC1101 module has 8 pins. Connect to ESP32-32E as follows:
 | MISO       | GPIO 19    | Green               |
 | SCK        | GPIO 18    | Yellow              |
 | CSN        | GPIO 27    | Orange              |
-| GDO0       | GPIO 26    | Purple              |
-| GDO2       | GPIO 5     | White (optional)    |
+| GDO0       | GPIO 35    | Purple              |
+| GDO2       | Not Used   | -                   |
 
 ## Important Notes
 
@@ -24,10 +24,9 @@ Your CC1101 module has 8 pins. Connect to ESP32-32E as follows:
    - ~17.3 cm length
    - Can replace with wire antenna if needed
 
-3. **SPI Bus Sharing**: The CC1101 shares the SPI bus with:
-   - ILI9341 Display (CS=GPIO15)
-   - SD Card (CS=GPIO4)
-   - CC1101 (CS=GPIO5)
+3. **SPI Bus**: CC1101 uses dedicated VSPI bus (SPI3)
+   - Display uses HSPI (SPI2)
+   - CC1101 uses VSPI with CS=GPIO27
 
 ## Software Features Enabled
 
