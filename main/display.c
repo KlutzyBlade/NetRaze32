@@ -4,10 +4,12 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include <string.h>
 
 static const char* TAG = "DISPLAY";
 spi_device_handle_t spi_device;
+static SemaphoreHandle_t display_mutex = NULL;
 
 // ILI9341 Commands
 #define ILI9341_SWRESET     0x01
@@ -25,12 +27,21 @@ esp_err_t lcd_cmd(uint8_t cmd) {
         return ESP_ERR_INVALID_STATE;
     }
     
+    if (display_mutex && xSemaphoreTake(display_mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+    
     gpio_set_level(LCD_DC_PIN, 0);
     spi_transaction_t t = {
         .length = 8,
         .tx_buffer = &cmd,
     };
-    return spi_device_polling_transmit(spi_device, &t);
+    esp_err_t ret = spi_device_polling_transmit(spi_device, &t);
+    
+    if (display_mutex) {
+        xSemaphoreGive(display_mutex);
+    }
+    return ret;
 }
 
 esp_err_t lcd_data(uint8_t data) {
@@ -39,15 +50,31 @@ esp_err_t lcd_data(uint8_t data) {
         return ESP_ERR_INVALID_STATE;
     }
     
+    if (display_mutex && xSemaphoreTake(display_mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+    
     gpio_set_level(LCD_DC_PIN, 1);
     spi_transaction_t t = {
         .length = 8,
         .tx_buffer = &data,
     };
-    return spi_device_polling_transmit(spi_device, &t);
+    esp_err_t ret = spi_device_polling_transmit(spi_device, &t);
+    
+    if (display_mutex) {
+        xSemaphoreGive(display_mutex);
+    }
+    return ret;
 }
 
 esp_err_t display_init(void) {
+    // Create mutex first
+    display_mutex = xSemaphoreCreateMutex();
+    if (display_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create display mutex");
+        return ESP_ERR_NO_MEM;
+    }
+    
     // Configure GPIO pins (DC, BL)
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
@@ -75,7 +102,11 @@ esp_err_t display_init(void) {
         .queue_size = 7,
     };
 
-    ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "SPI bus init failed: %s", esp_err_to_name(ret));
+        return ret;
+    }
     ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &devcfg, &spi_device));
 
     // Hardware reset (skip if RST connected to ESP32-EN)

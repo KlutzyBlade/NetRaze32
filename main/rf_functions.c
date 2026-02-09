@@ -17,6 +17,15 @@ static const char* TAG = "RF";
 #define RF_IRQ_PIN   16  // Available GPIO on ESP32-32E
 
 esp_err_t rf_24ghz_init(void) {
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = (1ULL << RF_CS_PIN) | (1ULL << RF_RST_PIN),
+        .pull_down_en = 0,
+        .pull_up_en = 0,
+    };
+    gpio_config(&io_conf);
+    
     ESP_LOGI(TAG, "RF 2.4GHz initialized (WiFi/BLE)");
     return ESP_OK;
 }

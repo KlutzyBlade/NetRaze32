@@ -91,21 +91,48 @@ void app_main(void) {
     vTaskDelay(pdMS_TO_TICKS(500));
     
     display_loading(50, COLOR_ORANGE);
-    wifi_init();
+    ret = wifi_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "WiFi init failed: %s", esp_err_to_name(ret));
+    }
     vTaskDelay(pdMS_TO_TICKS(500));
     
     display_loading(75, COLOR_ORANGE);
-    bluetooth_init();
-    rf_24ghz_init();
-    rf_subghz_init();
+    ret = bluetooth_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "Bluetooth init failed: %s", esp_err_to_name(ret));
+    }
+    ret = rf_24ghz_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "RF 2.4GHz init failed: %s", esp_err_to_name(ret));
+    }
+    ret = rf_subghz_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "RF SubGHz init failed: %s", esp_err_to_name(ret));
+    }
     vTaskDelay(pdMS_TO_TICKS(500));
     
     display_loading(90, COLOR_ORANGE);
-    ir_init();
-    nfc_init();
-    gps_init();
-    badusb_init();
-    oui_spy_init();
+    ret = ir_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "IR init failed: %s", esp_err_to_name(ret));
+    }
+    ret = nfc_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "NFC init failed: %s", esp_err_to_name(ret));
+    }
+    ret = gps_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "GPS init failed: %s", esp_err_to_name(ret));
+    }
+    ret = badusb_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "BadUSB init failed: %s", esp_err_to_name(ret));
+    }
+    ret = oui_spy_init();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "OUI-Spy init failed: %s", esp_err_to_name(ret));
+    }
     vTaskDelay(pdMS_TO_TICKS(500));
     
     display_loading(100, COLOR_GREEN);

@@ -31,6 +31,11 @@ void utils_init(void) {
 }
 
 float read_battery_voltage(void) {
+    if (adc1_handle == NULL) {
+        ESP_LOGW(TAG, "ADC not initialized");
+        return 3.7f;
+    }
+    
     int adc_raw;
     esp_err_t ret = adc_oneshot_read(adc1_handle, BATTERY_ADC_CHANNEL, &adc_raw);
     if (ret == ESP_OK) {

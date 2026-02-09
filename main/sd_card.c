@@ -19,10 +19,6 @@ esp_err_t sd_card_init(void) {
     display_draw_text(10, 10, "SD Card Init", COLOR_WHITE, COLOR_BLACK);
     display_draw_text(10, 40, "Mounting...", COLOR_ORANGE, COLOR_BLACK);
     
-    // 15 second timeout
-    TickType_t start_time = xTaskGetTickCount();
-    TickType_t timeout = pdMS_TO_TICKS(15000);
-    
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = false,
         .max_files = 5,
@@ -31,19 +27,13 @@ esp_err_t sd_card_init(void) {
     
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.slot = SPI2_HOST;
+    host.command_timeout_ms = 15000;
     
     sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
     slot_config.gpio_cs = SD_CS_PIN;
     slot_config.host_id = host.slot;
     
-    esp_err_t ret = ESP_FAIL;
-    
-    // Check timeout during mount attempt
-    if ((xTaskGetTickCount() - start_time) < timeout) {
-        ret = esp_vfs_fat_sdspi_mount("/sdcard", &host, &slot_config, &mount_config, &card);
-    } else {
-        ret = ESP_ERR_TIMEOUT;
-    }
+    esp_err_t ret = esp_vfs_fat_sdspi_mount("/sdcard", &host, &slot_config, &mount_config, &card);
     
     if (ret == ESP_OK) {
         mounted = true;
@@ -73,10 +63,6 @@ esp_err_t sd_card_init(void) {
         }
         
         ESP_LOGI(TAG, "SD card mounted successfully");
-    } else if (ret == ESP_ERR_TIMEOUT) {
-        mounted = false;
-        display_draw_text(10, 60, "SD Card timeout", COLOR_RED, COLOR_BLACK);
-        ESP_LOGW(TAG, "SD card mount timeout");
     } else {
         mounted = false;
         display_draw_text(10, 60, "SD Card failed", COLOR_RED, COLOR_BLACK);
