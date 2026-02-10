@@ -85,7 +85,7 @@ esp_err_t display_init(void) {
     };
     gpio_config(&io_conf);
 
-    // Configure SPI bus
+    // Configure SPI bus (shared with SD card)
     spi_bus_config_t buscfg = {
         .miso_io_num = LCD_MISO_PIN,
         .mosi_io_num = LCD_MOSI_PIN,
@@ -100,10 +100,11 @@ esp_err_t display_init(void) {
         .mode = 0,
         .spics_io_num = LCD_CS_PIN,
         .queue_size = 7,
+        .flags = SPI_DEVICE_NO_DUMMY,
     };
 
     esp_err_t ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
-    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
+    if (ret != ESP_OK) {
         ESP_LOGE(TAG, "SPI bus init failed: %s", esp_err_to_name(ret));
         return ret;
     }

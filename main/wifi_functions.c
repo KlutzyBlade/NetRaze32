@@ -307,13 +307,11 @@ void wifi_packet_monitor(void) {
     display_draw_text(10, 10, "Packet Capture", COLOR_WHITE, COLOR_BLACK);
     display_fill_rect(0, 25, DISPLAY_WIDTH, 2, COLOR_WHITE);
     
-    // Check SD card
-    if (!sd_card_is_mounted()) {
-        display_draw_text(10, 40, "SD card not mounted!", COLOR_RED, COLOR_BLACK);
-        display_draw_text(10, 60, "Insert SD card", COLOR_ORANGE, COLOR_BLACK);
-        vTaskDelay(pdMS_TO_TICKS(3000));
-        return;
-    }
+    display_draw_text(10, 40, "Packet capture disabled", COLOR_RED, COLOR_BLACK);
+    display_draw_text(10, 60, "SD card not available", COLOR_ORANGE, COLOR_BLACK);
+    display_draw_text(10, 280, "Touch to continue", COLOR_GRAY, COLOR_BLACK);
+    while (!touchscreen_is_touched()) vTaskDelay(pdMS_TO_TICKS(100));
+    return;
     
     // Generate filename with timestamp
     time_t now = time(NULL);
@@ -326,10 +324,11 @@ void wifi_packet_monitor(void) {
     
     display_draw_text(10, 40, "Starting capture...", COLOR_GREEN, COLOR_BLACK);
     display_draw_text(10, 60, filename, COLOR_BLUE, COLOR_BLACK);
+    display_draw_text(10, 75, "(Internal flash)", COLOR_ORANGE, COLOR_BLACK);
     
     packet_capture_init();
     if (packet_capture_start(filename) != ESP_OK) {
-        display_draw_text(10, 80, "Failed to start!", COLOR_RED, COLOR_BLACK);
+        display_draw_text(10, 95, "Failed to start!", COLOR_RED, COLOR_BLACK);
         vTaskDelay(pdMS_TO_TICKS(3000));
         return;
     }

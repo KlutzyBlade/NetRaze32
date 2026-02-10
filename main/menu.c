@@ -22,7 +22,6 @@
 #include "badusb_functions.h"
 #include "sd_browser.h"
 #include "battery_monitor.h"
-#include "usb_msc.h"
 #include "antenna_indicator.h"
 #include "confirmation_dialog.h"
 #include "brightness_control.h"
@@ -109,8 +108,6 @@ static const char* tools_menu_items[] = {
     "Target Manager",
     "Packet Logger",
     "Signal Analyzer",
-    "SD Browser",
-    "USB Mass Storage",
     "Back"
 };
 
@@ -495,9 +492,7 @@ void execute_tools_function(int index) {
         case 0: target_manager_ui(); break;
         case 1: //packet_logger_ui(); break;
         case 2: //signal_analyzer_ui(); break;
-        case 3: sd_browser_ui(); break;
-        case 4: usb_msc_mode_ui(); break;
-        case 5:
+        case 3:
             menu_state.in_submenu = false;
             scroll_offset = 0;
             menu_draw();
@@ -598,7 +593,7 @@ void menu_handle_input(void) {
                     else if (menu_state.current_index == MENU_SUBGHZ) submenu_count = 6;
                     else if (menu_state.current_index == MENU_IR_REMOTE) submenu_count = 4;
                     else if (menu_state.current_index == MENU_NFC_RFID) submenu_count = 4;
-                    else if (menu_state.current_index == MENU_TOOLS) submenu_count = 6;
+                    else if (menu_state.current_index == MENU_TOOLS) submenu_count = 4;
                     else if (menu_state.current_index == MENU_SETTING) submenu_count = 7;
                     else submenu_count = 0;
                     

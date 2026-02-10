@@ -1,5 +1,6 @@
 #include "target_manager.h"
-#include "sd_card.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 #include "display.h"
 #include "touchscreen.h"
 #include "esp_log.h"
@@ -8,6 +9,7 @@
 #include <time.h>
 
 static const char* TAG = "TARGET_MGR";
+static const char* NVS_NAMESPACE = "targets";
 static saved_target_t targets[MAX_SAVED_TARGETS];
 static uint8_t target_count = 0;
 
@@ -79,36 +81,36 @@ void target_manager_toggle_favorite(uint8_t index) {
 }
 
 bool target_manager_load(void) {
-    if (!sd_card_is_mounted()) return false;
-    
-    FILE* f = fopen("/sdcard/targets.dat", "rb");
-    if (!f) {
-        ESP_LOGI(TAG, "No saved targets file");
+    nvs_handle_t nvs_handle;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs_handle);
+    if (err != ESP_OK) {
+        ESP_LOGI(TAG, "No saved targets");
         return false;
     }
     
-    fread(&target_count, sizeof(target_count), 1, f);
-    fread(targets, sizeof(saved_target_t), target_count, f);
-    fclose(f);
+    nvs_get_u8(nvs_handle, "count", &target_count);
+    size_t required_size = sizeof(saved_target_t) * target_count;
+    nvs_get_blob(nvs_handle, "data", targets, &required_size);
+    nvs_close(nvs_handle);
     
-    ESP_LOGI(TAG, "Loaded %d targets", target_count);
+    ESP_LOGI(TAG, "Loaded %d targets from NVS", target_count);
     return true;
 }
 
 bool target_manager_save_to_file(void) {
-    if (!sd_card_is_mounted()) return false;
-    
-    FILE* f = fopen("/sdcard/targets.dat", "wb");
-    if (!f) {
-        ESP_LOGE(TAG, "Failed to open targets file");
+    nvs_handle_t nvs_handle;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open NVS");
         return false;
     }
     
-    fwrite(&target_count, sizeof(target_count), 1, f);
-    fwrite(targets, sizeof(saved_target_t), target_count, f);
-    fclose(f);
+    nvs_set_u8(nvs_handle, "count", target_count);
+    nvs_set_blob(nvs_handle, "data", targets, sizeof(saved_target_t) * target_count);
+    nvs_commit(nvs_handle);
+    nvs_close(nvs_handle);
     
-    ESP_LOGI(TAG, "Saved %d targets to file", target_count);
+    ESP_LOGI(TAG, "Saved %d targets to NVS", target_count);
     return true;
 }
 

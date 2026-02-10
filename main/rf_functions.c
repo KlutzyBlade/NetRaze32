@@ -175,36 +175,43 @@ void rf_spectrum_analyzer(void) {
         display_draw_text(10, 40, "Connect CC1101 module", COLOR_WHITE, COLOR_BLACK);
         display_draw_text(10, 280, "Touch to exit", COLOR_GRAY, COLOR_BLACK);
         while (!touchscreen_is_touched()) vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(300));
         return;
     }
     
     display_fill_screen(COLOR_BLACK);
     display_draw_text(10, 10, "Spectrum Analyzer", COLOR_WHITE, COLOR_BLACK);
     display_draw_text(10, 30, "CC1101 Active", COLOR_GREEN, COLOR_BLACK);
+    display_draw_text(10, 280, "Touch to exit", COLOR_GRAY, COLOR_BLACK);
     
     cc1101_freq_t freqs[] = {CC1101_FREQ_315, CC1101_FREQ_433, CC1101_FREQ_868, CC1101_FREQ_915};
     const char* freq_names[] = {"315MHz", "433MHz", "868MHz", "915MHz"};
     
-    for (int i = 0; i < 4; i++) {
-        cc1101_set_frequency(freqs[i]);
-        cc1101_set_rx_mode();
-        
-        display_fill_rect(10, 60, 220, 150, COLOR_BLACK);
-        display_draw_text(10, 60, freq_names[i], COLOR_ORANGE, COLOR_BLACK);
-        
-        for (int x = 0; x < 200; x++) {
-            int8_t rssi = cc1101_get_rssi();
-            int h = (rssi + 120) * 2;
-            if (h < 0) h = 0;
-            if (h > 100) h = 100;
+    bool running = true;
+    while (running) {
+        for (int i = 0; i < 4 && running; i++) {
+            cc1101_set_frequency(freqs[i]);
+            cc1101_set_rx_mode();
             
-            display_fill_rect(10 + x, 160 - h, 1, h, COLOR_GREEN);
-            vTaskDelay(pdMS_TO_TICKS(10));
+            display_fill_rect(10, 60, 220, 150, COLOR_BLACK);
+            display_draw_text(10, 60, freq_names[i], COLOR_ORANGE, COLOR_BLACK);
             
-            if (touchscreen_is_touched()) return;
+            for (int x = 0; x < 200 && running; x++) {
+                int8_t rssi = cc1101_get_rssi();
+                int h = (rssi + 120) * 2;
+                if (h < 0) h = 0;
+                if (h > 100) h = 100;
+                
+                display_fill_rect(10 + x, 160 - h, 1, h, COLOR_GREEN);
+                
+                if (touchscreen_is_touched()) {
+                    running = false;
+                }
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
         }
     }
     
-    display_draw_text(10, 280, "Touch to exit", COLOR_GRAY, COLOR_BLACK);
-    while (!touchscreen_is_touched()) vTaskDelay(pdMS_TO_TICKS(100));
+    cc1101_set_idle_mode();
+    vTaskDelay(pdMS_TO_TICKS(300));
 }

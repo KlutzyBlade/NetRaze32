@@ -57,11 +57,6 @@ void draw_status_bar(float battery_voltage) {
     snprintf(bat_str, sizeof(bat_str), "%.0f%%", pct);
     uint16_t bat_color = pct > 50 ? COLOR_GREEN : pct > 20 ? COLOR_ORANGE : COLOR_RED;
     display_draw_text(DISPLAY_WIDTH - 35, 5, bat_str, bat_color, COLOR_DARKGRAY);
-    
-    // SD card indicator
-    if (sd_card_is_mounted()) {
-        display_draw_text(DISPLAY_WIDTH - 60, 5, "SD", COLOR_GREEN, COLOR_DARKGRAY);
-    }
 }
 
 void log_system_stats(void) {

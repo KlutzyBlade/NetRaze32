@@ -6,6 +6,7 @@
 #include "esp_bt_main.h"
 #include "esp_log.h"
 #include "esp_random.h"
+#include "esp_wifi.h"
 #include "display.h"
 #include "touchscreen.h"
 #include "freertos/FreeRTOS.h"
@@ -23,19 +24,16 @@ static int8_t device_rssi[20];
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
     switch (event) {
         case ESP_GAP_BLE_SCAN_RESULT_EVT:
-            if (param->scan_rst.search_evt == ESP_GAP_SEARCH_INQ_RES_EVT) {
-                if (scan_count < 20) {
+            if (scan_count < 20) {
                     memcpy(scan_results[scan_count], param->scan_rst.bda, 6);
                     device_rssi[scan_count] = param->scan_rst.rssi;
                     
-                    // Extract device name from adv data - try complete name first
                     uint8_t *adv_name = NULL;
                     uint8_t adv_name_len = 0;
                     adv_name = esp_ble_resolve_adv_data(param->scan_rst.ble_adv, 
                                                         ESP_BLE_AD_TYPE_NAME_CMPL, 
                                                         &adv_name_len);
                     
-                    // If no complete name, try short name
                     if (!adv_name || adv_name_len == 0) {
                         adv_name = esp_ble_resolve_adv_data(param->scan_rst.ble_adv, 
                                                             ESP_BLE_AD_TYPE_NAME_SHORT, 
@@ -47,14 +45,12 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                         memcpy(device_names[scan_count], adv_name, len);
                         device_names[scan_count][len] = '\0';
                     } else {
-                        // No name - show shortened MAC format
                         snprintf(device_names[scan_count], 32, "BLE_%02X%02X%02X",
                                 param->scan_rst.bda[3], param->scan_rst.bda[4],
                                 param->scan_rst.bda[5]);
                     }
                     
                     scan_count++;
-                }
             }
             break;
         default:
@@ -102,6 +98,20 @@ static bool is_surveillance_device(const uint8_t* mac, char* vendor) {
 }
 
 void ble_scan_start(void) {
+    esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    if (bt_initialized) {
+        esp_bluedroid_disable();
+        esp_bluedroid_deinit();
+        esp_bt_controller_disable();
+        esp_bt_controller_deinit();
+        bt_initialized = false;
+    }
+    
+    bluetooth_init();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
     bool scanning = true;
     int scroll_page = 0;
     int items_per_page = 7;
@@ -114,6 +124,7 @@ void ble_scan_start(void) {
         display_draw_text(10, 30, "Scanning...", COLOR_GREEN, COLOR_BLACK);
         
         scan_count = 0;
+        
         esp_ble_scan_params_t scan_params = {
             .scan_type = BLE_SCAN_TYPE_ACTIVE,
             .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
@@ -124,8 +135,8 @@ void ble_scan_start(void) {
         };
         
         esp_ble_gap_set_scan_params(&scan_params);
+        vTaskDelay(pdMS_TO_TICKS(500));
         esp_ble_gap_start_scanning(10);
-        
         vTaskDelay(pdMS_TO_TICKS(10000));
         esp_ble_gap_stop_scanning();
         
@@ -235,6 +246,19 @@ void ble_scan_start(void) {
 }
 
 void ble_apple_spam(void) {
+    esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    if (bt_initialized) {
+        esp_bluedroid_disable();
+        esp_bluedroid_deinit();
+        esp_bt_controller_disable();
+        esp_bt_controller_deinit();
+        bt_initialized = false;
+    }
+    bluetooth_init();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
     display_fill_screen(COLOR_BLACK);
     display_draw_text(10, 10, "Apple Spam Attack", COLOR_RED, COLOR_BLACK);
     
@@ -273,6 +297,19 @@ void ble_apple_spam(void) {
 }
 
 void ble_samsung_spam(void) {
+    esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    if (bt_initialized) {
+        esp_bluedroid_disable();
+        esp_bluedroid_deinit();
+        esp_bt_controller_disable();
+        esp_bt_controller_deinit();
+        bt_initialized = false;
+    }
+    bluetooth_init();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
     display_fill_screen(COLOR_BLACK);
     display_draw_text(10, 10, "Samsung Spam", COLOR_RED, COLOR_BLACK);
     
@@ -310,6 +347,19 @@ void ble_samsung_spam(void) {
 }
 
 void ble_beacon_flood(void) {
+    esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    if (bt_initialized) {
+        esp_bluedroid_disable();
+        esp_bluedroid_deinit();
+        esp_bt_controller_disable();
+        esp_bt_controller_deinit();
+        bt_initialized = false;
+    }
+    bluetooth_init();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
     display_fill_screen(COLOR_BLACK);
     display_draw_text(10, 10, "Beacon Flood", COLOR_RED, COLOR_BLACK);
     
@@ -355,6 +405,19 @@ void ble_beacon_flood(void) {
 }
 
 void ble_jammer_start(void) {
+    esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    if (bt_initialized) {
+        esp_bluedroid_disable();
+        esp_bluedroid_deinit();
+        esp_bt_controller_disable();
+        esp_bt_controller_deinit();
+        bt_initialized = false;
+    }
+    bluetooth_init();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
     display_fill_screen(COLOR_BLACK);
     display_draw_text(10, 10, "BLE Jammer", COLOR_RED, COLOR_BLACK);
     display_draw_text(10, 30, "Jamming BLE channels", COLOR_WHITE, COLOR_BLACK);
@@ -449,6 +512,19 @@ void ble_spoofer_start(void) {
 }
 
 void ble_sour_apple(void) {
+    esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    if (bt_initialized) {
+        esp_bluedroid_disable();
+        esp_bluedroid_deinit();
+        esp_bt_controller_disable();
+        esp_bt_controller_deinit();
+        bt_initialized = false;
+    }
+    bluetooth_init();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
     display_fill_screen(COLOR_BLACK);
     display_draw_text(10, 10, "Sour Apple Attack", COLOR_RED, COLOR_BLACK);
     display_draw_text(10, 30, "Targeting iOS devices", COLOR_WHITE, COLOR_BLACK);
@@ -497,6 +573,19 @@ void ble_sour_apple(void) {
 }
 
 void ble_sniffer_start(void) {
+    esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    if (bt_initialized) {
+        esp_bluedroid_disable();
+        esp_bluedroid_deinit();
+        esp_bt_controller_disable();
+        esp_bt_controller_deinit();
+        bt_initialized = false;
+    }
+    bluetooth_init();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
     display_fill_screen(COLOR_BLACK);
     display_draw_text(10, 10, "BLE Traffic Sniffer", COLOR_WHITE, COLOR_BLACK);
     display_draw_text(10, 30, "Intercepting packets", COLOR_GREEN, COLOR_BLACK);
@@ -554,6 +643,19 @@ void ble_sniffer_start(void) {
 
 
 void ble_targeted_attack(void) {
+    esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
+    if (bt_initialized) {
+        esp_bluedroid_disable();
+        esp_bluedroid_deinit();
+        esp_bt_controller_disable();
+        esp_bt_controller_deinit();
+        bt_initialized = false;
+    }
+    bluetooth_init();
+    vTaskDelay(pdMS_TO_TICKS(500));
+    
     display_fill_screen(COLOR_BLACK);
     display_draw_text(10, 10, "Targeted BLE Attack", COLOR_RED, COLOR_BLACK);
     display_fill_rect(0, 25, DISPLAY_WIDTH, 2, COLOR_WHITE);
@@ -653,4 +755,6 @@ void ble_targeted_attack(void) {
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
+
+
 

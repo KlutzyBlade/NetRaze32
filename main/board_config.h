@@ -39,12 +39,11 @@
 #define BATTERY_ADC_CHANNEL  ADC_CHANNEL_0  // GPIO36 (VP)
 #define BATTERY_VOLTAGE_DIVIDER  2.0f
 
-// SD Card pins (SPI mode) - ESP32-32E uses same SPI bus as display
-// SD card shares HSPI with display, only CS is different
-#define SD_MISO_PIN     12  // Shared with LCD_MISO
-#define SD_MOSI_PIN     13  // Shared with LCD_MOSI
-#define SD_SCK_PIN      14  // Shared with LCD_SCK
-#define SD_CS_PIN       4   // Separate CS for SD card
+// SD Card pins (SDIO 1-bit mode) - ESP32-32E built-in SD slot
+#define SD_CMD_PIN      15  // SDIO CMD
+#define SD_CLK_PIN      14  // SDIO CLK
+#define SD_D0_PIN       2   // SDIO DAT0
+#define SD_D3_PIN       13  // SDIO DAT3 (used as CS in 1-bit mode)
 
 // CC1101 SubGHz Module (Optional - uses VSPI connector)
 #define CC1101_MOSI_PIN 23  // VSPI MOSI (SPI connector)

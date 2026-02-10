@@ -1,5 +1,6 @@
 #include "settings_menu.h"
-#include "sd_card.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 #include "display.h"
 #include "touchscreen.h"
 #include "board_config.h"
@@ -9,6 +10,7 @@
 #include <stdio.h>
 
 static const char* TAG = "SETTINGS_MENU";
+static const char* NVS_NAMESPACE = "settings";
 static app_settings_t settings = {
     .brightness = 80,
     .attack_power = 100,
@@ -30,35 +32,38 @@ app_settings_t* settings_menu_get(void) {
 }
 
 bool settings_menu_save(void) {
-    if (!sd_card_is_mounted()) return false;
-    
-    FILE* f = fopen("/sdcard/settings.dat", "wb");
-    if (!f) {
-        ESP_LOGE(TAG, "Failed to save settings");
+    nvs_handle_t nvs_handle;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open NVS");
         return false;
     }
     
-    fwrite(&settings, sizeof(app_settings_t), 1, f);
-    fclose(f);
+    nvs_set_blob(nvs_handle, "settings", &settings, sizeof(app_settings_t));
+    nvs_commit(nvs_handle);
+    nvs_close(nvs_handle);
     
-    ESP_LOGI(TAG, "Settings saved");
+    ESP_LOGI(TAG, "Settings saved to NVS");
     return true;
 }
 
 bool settings_menu_load(void) {
-    if (!sd_card_is_mounted()) return false;
-    
-    FILE* f = fopen("/sdcard/settings.dat", "rb");
-    if (!f) {
+    nvs_handle_t nvs_handle;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs_handle);
+    if (err != ESP_OK) {
         ESP_LOGI(TAG, "No saved settings, using defaults");
         return false;
     }
     
-    fread(&settings, sizeof(app_settings_t), 1, f);
-    fclose(f);
+    size_t required_size = sizeof(app_settings_t);
+    err = nvs_get_blob(nvs_handle, "settings", &settings, &required_size);
+    nvs_close(nvs_handle);
     
-    ESP_LOGI(TAG, "Settings loaded");
-    return true;
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "Settings loaded from NVS");
+        return true;
+    }
+    return false;
 }
 
 static void draw_slider(int x, int y, int width, uint8_t value, const char* label) {

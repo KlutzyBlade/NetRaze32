@@ -1,8 +1,8 @@
 #include "packet_capture.h"
-#include "sd_card.h"
 #include "led_alerts.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_spiffs.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -11,24 +11,34 @@ static packet_capture_t capture = {0};
 
 esp_err_t packet_capture_init(void) {
     memset(&capture, 0, sizeof(packet_capture_t));
-    ESP_LOGI(TAG, "Packet capture initialized");
+    
+    // Initialize SPIFFS
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+    
+    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to init SPIFFS: %s", esp_err_to_name(ret));
+        return ret;
+    }
+    
+    ESP_LOGI(TAG, "Packet capture initialized with SPIFFS");
     return ESP_OK;
 }
 
 esp_err_t packet_capture_start(const char* filename) {
-    if (!sd_card_is_mounted()) {
-        ESP_LOGE(TAG, "SD card not mounted");
-        return ESP_ERR_INVALID_STATE;
-    }
-    
     if (capture.active) {
         ESP_LOGW(TAG, "Capture already active");
         return ESP_ERR_INVALID_STATE;
     }
     
-    // Create full path
+    // Create full path in SPIFFS
     char filepath[80];
-    snprintf(filepath, sizeof(filepath), "/sdcard/%s", filename);
+    snprintf(filepath, sizeof(filepath), "/spiffs/%s", filename);
     
     // Open file for writing
     FILE* f = fopen(filepath, "wb");
